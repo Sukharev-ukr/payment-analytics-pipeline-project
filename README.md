@@ -20,7 +20,7 @@ End-to-end data pipeline for payment transaction analytics. Generates synthetic 
 ## Getting started
 
 ```bash
-git clone <repo-url>
+git clone <[repo-url](https://github.com/Sukharev-ukr/payment-analytics-pipeline-project.git)>
 cd payment-analytics-pipeline
 docker-compose up -d
 ```
