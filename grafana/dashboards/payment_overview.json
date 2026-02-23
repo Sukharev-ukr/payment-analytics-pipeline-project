@@ -1,0 +1,288 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Merchant Net Settlement (EUR)",
+      "description": "Daily net settlement amount per merchant. Net = Captured - Refunded - Chargebacks.",
+      "type": "barchart",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "paymentsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.8,
+        "groupWidth": 0.7,
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "paymentsdb" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  merchant_name,\n  net_settlement_eur\nFROM analytics.merchant_daily_settlement\nORDER BY net_settlement_eur DESC\nLIMIT 20;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Authorization Rate by Payment Method",
+      "description": "Authorization success rate per payment method. Higher = better conversion for merchants.",
+      "type": "timeseries",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "paymentsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "pointSize": 5,
+            "showPoints": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "lastNotNull"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "paymentsdb" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  report_date AS time,\n  payment_method AS metric,\n  authorization_rate AS value\nFROM analytics.payment_method_performance\nORDER BY report_date;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Transaction Volume by Event Type",
+      "description": "Breakdown of payment events across lifecycle stages.",
+      "type": "piechart",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 10 },
+      "datasource": { "type": "postgres", "uid": "paymentsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": true
+        },
+        "pieType": "donut",
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "paymentsdb" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  event_type,\n  COUNT(*) AS total\nFROM raw.payment_events\nGROUP BY event_type\nORDER BY total DESC;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Data Quality Scoreboard",
+      "description": "Latest quality check results per table. Critical failures block the pipeline; warnings are logged for investigation.",
+      "type": "table",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 10 },
+      "datasource": { "type": "postgres", "uid": "paymentsdb" },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "status" },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "PASS": { "color": "green", "text": "PASS" } } },
+                  { "type": "value", "options": { "WARN": { "color": "orange", "text": "WARN" } } },
+                  { "type": "value", "options": { "FAIL": { "color": "red", "text": "FAIL" } } }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "displayName": "status", "desc": true }],
+        "cellHeight": "sm",
+        "footer": { "show": false }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "paymentsdb" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  table_name,\n  check_name,\n  check_type,\n  status,\n  severity,\n  records_checked,\n  records_failed,\n  failure_percentage,\n  details,\n  check_timestamp\nFROM analytics.data_quality_log\nWHERE check_timestamp = (\n  SELECT MAX(check_timestamp) FROM analytics.data_quality_log\n)\nORDER BY\n  CASE status WHEN 'FAIL' THEN 1 WHEN 'WARN' THEN 2 ELSE 3 END,\n  table_name;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Conversion Funnel (Auth -> Capture -> Settlement)",
+      "description": "Transaction lifecycle conversion rates per merchant. Low auth_to_capture_rate may indicate fulfillment issues.",
+      "type": "barchart",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 20 },
+      "datasource": { "type": "postgres", "uid": "paymentsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "barRadius": 0.1,
+        "barWidth": 0.7,
+        "groupWidth": 0.7,
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "xTickLabelRotation": 0
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "paymentsdb" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  merchant_id,\n  auth_to_capture_rate,\n  capture_to_settle_rate,\n  refund_rate\nFROM analytics.conversion_funnel\nORDER BY auth_to_capture_rate ASC\nLIMIT 20;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Pipeline Event Volume",
+      "description": "Total raw payment events ingested. Growing count confirms streaming pipeline is healthy.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 20 },
+      "datasource": { "type": "postgres", "uid": "paymentsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "green", "value": 1000 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "paymentsdb" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  COUNT(*) AS \"Total Events\"\nFROM raw.payment_events;",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Quality Check Pass Rate",
+      "description": "Percentage of quality checks passing in the latest run.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 20 },
+      "datasource": { "type": "postgres", "uid": "paymentsdb" },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 0.8 },
+              { "color": "green", "value": 0.95 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "paymentsdb" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  ROUND(\n    SUM(CASE WHEN status = 'PASS' THEN 1 ELSE 0 END)::NUMERIC /\n    NULLIF(COUNT(*), 0), 4\n  ) AS \"Pass Rate\"\nFROM analytics.data_quality_log\nWHERE check_timestamp = (\n  SELECT MAX(check_timestamp) FROM analytics.data_quality_log\n);",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["payments", "analytics", "adyen"],
+  "templating": {
+    "list": []
+  },
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {},
+  "timezone": "utc",
+  "title": "Payment Analytics Overview",
+  "uid": "payment-analytics-overview",
+  "version": 1
+}

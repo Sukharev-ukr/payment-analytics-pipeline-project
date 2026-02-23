@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker
+docker-compose.override.yml
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Spark checkpoints
+checkpoint/
+spark-warehouse/
+metastore_db/
+derby.log
+
+# Airflow
+airflow/logs/
+airflow/plugins/
+logs/
+
+# Grafana
+grafana-data/
+
+# Data
+*.csv
+*.parquet
+data/
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Claude / AI
+.claude/

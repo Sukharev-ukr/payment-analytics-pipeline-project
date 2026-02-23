@@ -1,0 +1,14 @@
+FROM apache/airflow:2.9.3-python3.11
+
+USER root
+
+# need docker CLI to exec spark-submit in the spark container
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends docker.io && \
+    rm -rf /var/lib/apt/lists/*
+
+USER airflow
+
+RUN pip install --no-cache-dir \
+    apache-airflow-providers-postgres==5.12.0 \
+    apache-airflow-providers-docker==3.12.0

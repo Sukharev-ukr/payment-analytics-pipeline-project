@@ -1,0 +1,18 @@
+apiVersion: 1
+
+datasources:
+  - name: PaymentsDB
+    uid: paymentsdb
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: payments
+    user: payments_user
+    secureJsonData:
+      password: payments_pass
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: false
+    isDefault: true
+    editable: true
